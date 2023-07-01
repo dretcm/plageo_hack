@@ -1,2 +1,2 @@
 # plageo_hack
-link: 
+link: https://dretcm.github.io/plageo_hack/

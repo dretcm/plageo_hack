@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+function p=lagrange(tx,ty)
+n=length(tx);
+L=poly(tx(2:n));
+p=L*ty(1)/polyval(L,tx(1));
+for k=2:n
+L=poly([tx(1:k-1),tx(k+1:n)]);
+p=p+L*ty(k)/polyval(L,tx(k));
+end
+
+function p=newtonp(fx,fy)
+n=length(fx);
+p=[fy(1)];
+for k=2:n
+q=poly(fx(1:k-1));
+A=(fy(k)-polyval(p,fx(k))/polyval(q,fx(k));
+p=[0,p] + A*q;
+endfor
+endfunction
+
+
+function plotArea(x, f, n)
+hold on
+subs_x = linspace(x(1), x(end), n);
+bar(subs_x, f(subs_x),...
+'FaceColor',[0.3010 0.7450 0.9330],...
+'EdgeColor',[0.3010 0.7450 0.9330])
+
+plot(x, f(x),...
+'Color',[1 .0 .0],....
+'LineWidth',5)
+endfunction
+
+
+function I=trapecio(f,a,b,n)
+h = (b-a)/n;
+I = 0;
+for k=0:n-1
+I += f(a + k*h) + f(a + (k+1)*h);
+endfor
+I = h/2 * I;
+endfunction
+
+
+function A = romberg(f,a,b,error)
+r(1,1) = trapecio(f,a,b,1);
+r(2,1) = trapecio(f,a,b,2);
+r(2,2) = (4*r(2,1)-r(1,1))/3;
+k = 2;
+while abs(r(k,k) - r(k,k-1))>=error
+k = k+1;
+r(k,1) = trapecio(f,a,b,2^(k-1));
+for j = 2:k
+r(k,j) = (4^(j-1)*r(k,j-1)-r(k-1,j-1))/(4^(j-1)-1);
+endfor
+endwhile
+A = r;
+endfunction
+
+
+function [t,y]=EULER(f,t0,y0,T,p)
+h=T/p;
+t=zeros(p+1,1);
+y=zeros(p+1,1);
+t(1)=t0;
+y(1)=y0;
+for i=2:p+1
+t(i)=t(i-1)+h;
+y(i)=y(i-1)+h*f(t(i-1),y(i-1));
+endfor
+plot(t,y,"*");
+endfunction
+
+
+function [t,y]=Taylor2(f,ft,fy,t0,y0,T,p)
+h=T/p;
+t=zeros(p+1,1);
+y=zeros(p+1,1);
+t(1)=t0;
+y(1)=y0;
+for i=2:p+1
+t(i)=t(i-1)+h;
+y(i)=y(i-1)+h*f(t(i-1),y(i-1)) + 0.5*h^2*(ft(t(i-1),y(i-1)) + fy(t(i-1),y(i-1))*f(t(i-1),y(i-1)));
+endfor
+plot(t,y,"*");
+endfunction
+</body>
+</html>

@@ -137,7 +137,19 @@ area = abs(trapecios(@(x) polyval(f1,x),0,4,1000) - trapecios(@(x) polyval(f2,x)
 % ------end
 
 % ------Datos proporcionados:
+p = lagrange([0 1 2 3 4], [1 -1 0 2 1]);
+fx = @(t,x) polyval(p,t)*cos(5*x);
+[t x] = EULER(fx, 0, 1, 4, 10);
+X = lagrange(t',x');
+F = @(s) trapecios(@(t) polyval(X,t).*exp(-s.*t), 0, pi()/2,100);
+
+dom = 0:0.01:4;
+plot(dom, F(dom))
+
+con = 0;
+for k=1:8
+  con += F(k*pi()/5);
+endfor
+con
 % ------end
 
-% ------Datos proporcionados:
-% ------end

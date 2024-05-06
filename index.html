@@ -1076,6 +1076,332 @@ void Octree::printTree(std::string line) {
 
 
 
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+struct Point {
+    int x, y;
+    Point(int x, int y) : x(x), y(y) {}
+};
+
+struct Node {
+    Point point;
+    Node* left;
+    Node* right;
+    Node(Point point) : point(point), left(nullptr), right(nullptr) {}
+};
+
+class KDTree {
+private:
+    Node* root;
+
+    Node* build_kdtree(std::vector<Point>& points, int depth) {
+        if (points.empty()) return nullptr;
+
+        int k = points[0].x; // assuming all points have the same dimensions
+        int axis = depth % k;
+
+        std::sort(points.begin(), points.end(), [&](const Point& a, const Point& b) {
+            return (axis == 0) ? a.x < b.x : a.y < b.y;
+        });
+
+        int median = points.size() / 2;
+        Node* node = new Node(points[median]);
+        node->left = build_kdtree(std::vector<Point>(points.begin(), points.begin() + median), depth + 1);
+        node->right = build_kdtree(std::vector<Point>(points.begin() + median + 1, points.end()), depth + 1);
+
+        return node;
+    }
+
+    double distance(const Point& a, const Point& b) {
+        return std::sqrt(std::pow(a.x - b.x, 2) + std::pow(a.y - b.y, 2));
+    }
+
+    Node* search_nearest_neighbor(Node* node, const Point& target, int depth, Node* best) {
+        if (!node) return best;
+
+        int axis = depth % 2;
+        Node* next_best = nullptr;
+        Node* next_branch = nullptr;
+
+        if (!best || distance(target, best->point) > distance(target, node->point)) {
+            next_best = node;
+        } else {
+            next_best = best;
+        }
+
+        if ((axis == 0 && target.x < node->point.x) || (axis == 1 && target.y < node->point.y)) {
+            next_branch = node->left;
+        } else {
+            next_branch = node->right;
+        }
+
+        return search_nearest_neighbor(next_branch, target, depth + 1, next_best);
+    }
+
+public:
+    KDTree(std::vector<Point>& points) {
+        root = build_kdtree(points, 0);
+    }
+
+    Point search_nearest_neighbor(const Point& target) {
+        return search_nearest_neighbor(root, target, 0, nullptr)->point;
+    }
+};
+
+int main() {
+    std::vector<Point> points = {{2, 3}, {5, 4}, {9, 6}, {4, 7}, {8, 1}, {7, 2}};
+    KDTree kdtree(points);
+
+    Point target(9, 2);
+    Point nearest_neighbor = kdtree.search_nearest_neighbor(target);
+    std::cout << "El vecino más cercano a (" << target.x << ", " << target.y << ") es (" 
+              << nearest_neighbor.x << ", " << nearest_neighbor.y << ")" << std::endl;
+
+    return 0;
+}
+
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+struct Rectangle {
+    int x1, y1, x2, y2; // Coordenadas de la esquina inferior izquierda (x1, y1) y la esquina superior derecha (x2, y2)
+    Rectangle(int x1, int y1, int x2, int y2) : x1(x1), y1(y1), x2(x2), y2(y2) {}
+};
+
+struct Node {
+    Rectangle rectangle;
+    std::vector<Node*> children;
+    Node(Rectangle rect) : rectangle(rect) {}
+};
+
+class RPlusTree {
+private:
+    Node* root;
+    int max_capacity;
+
+    Node* choose_subtree(Node* node, const Rectangle& rect) {
+        if (node->children.empty()) return node;
+
+        double min_enlargement = std::numeric_limits<double>::max();
+        Node* best_child = nullptr;
+
+        for (Node* child : node->children) {
+            double enlargement = calculate_enlargement(child->rectangle, rect);
+            if (enlargement < min_enlargement) {
+                min_enlargement = enlargement;
+                best_child = child;
+            }
+        }
+
+        return choose_subtree(best_child, rect);
+    }
+
+    double calculate_enlargement(const Rectangle& rect1, const Rectangle& rect2) {
+        int new_x1 = std::min(rect1.x1, rect2.x1);
+        int new_y1 = std::min(rect1.y1, rect2.y1);
+        int new_x2 = std::max(rect1.x2, rect2.x2);
+        int new_y2 = std::max(rect1.y2, rect2.y2);
+
+        double area_new = (new_x2 - new_x1) * (new_y2 - new_y1);
+        double area_old = (rect1.x2 - rect1.x1) * (rect1.y2 - rect1.y1);
+
+        return area_new - area_old;
+    }
+
+public:
+    RPlusTree(int max_capacity) : root(nullptr), max_capacity(max_capacity) {}
+
+    void insert(const Rectangle& rect) {
+        if (!root) {
+            root = new Node(rect);
+            return;
+        }
+
+        Node* leaf = choose_subtree(root, rect);
+        if (leaf->children.size() < max_capacity) {
+            leaf->children.push_back(new Node(rect));
+        } else {
+            // Handle overflow
+            // Split node and reinsert
+        }
+    }
+
+    // Implement other operations like search, delete, etc.
+};
+
+int main() {
+    RPlusTree rplus_tree(4); // Max capacity of 4 children per node
+
+    rplus_tree.insert(Rectangle(0, 0, 5, 5));
+    rplus_tree.insert(Rectangle(2, 2, 7, 7));
+    // Insert more rectangles
+
+    return 0;
+}
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+struct Rectangle {
+    int x1, y1, x2, y2; // Coordenadas de la esquina inferior izquierda (x1, y1) y la esquina superior derecha (x2, y2)
+    Rectangle(int x1, int y1, int x2, int y2) : x1(x1), y1(y1), x2(x2), y2(y2) {}
+};
+
+struct Node {
+    Rectangle rectangle;
+    std::vector<Node*> children;
+    Node(Rectangle rect) : rectangle(rect) {}
+};
+
+class RStarTree {
+private:
+    Node* root;
+    int max_capacity;
+    int min_capacity;
+
+    Node* choose_subtree(Node* node, const Rectangle& rect) {
+        if (node->children.empty()) return node;
+
+        double min_enlargement = std::numeric_limits<double>::max();
+        Node* best_child = nullptr;
+
+        for (Node* child : node->children) {
+            double enlargement = calculate_enlargement(child->rectangle, rect);
+            if (enlargement < min_enlargement) {
+                min_enlargement = enlargement;
+                best_child = child;
+            }
+        }
+
+        return choose_subtree(best_child, rect);
+    }
+
+    double calculate_enlargement(const Rectangle& rect1, const Rectangle& rect2) {
+        int new_x1 = std::min(rect1.x1, rect2.x1);
+        int new_y1 = std::min(rect1.y1, rect2.y1);
+        int new_x2 = std::max(rect1.x2, rect2.x2);
+        int new_y2 = std::max(rect1.y2, rect2.y2);
+
+        double area_new = (new_x2 - new_x1) * (new_y2 - new_y1);
+        double area_old = (rect1.x2 - rect1.x1) * (rect1.y2 - rect1.y1);
+
+        return area_new - area_old;
+    }
+
+    void split_node(Node* node) {
+        // Implementar lógica de partición de nodo
+    }
+
+public:
+    RStarTree(int max_capacity, int min_capacity) : root(nullptr), max_capacity(max_capacity), min_capacity(min_capacity) {}
+
+    void insert(const Rectangle& rect) {
+        if (!root) {
+            root = new Node(rect);
+            return;
+        }
+
+        Node* leaf = choose_subtree(root, rect);
+        if (leaf->children.size() < max_capacity) {
+            leaf->children.push_back(new Node(rect));
+        } else {
+            // Handle overflow
+            // Split node and reinsert
+            if (leaf->children.size() >= min_capacity) {
+                split_node(leaf);
+                // Reinsert
+            } else {
+                // Adjust bounds and continue
+            }
+        }
+    }
+
+    // Implementar otras operaciones como búsqueda, eliminación, etc.
+};
+
+int main() {
+    RStarTree rstar_tree(4, 2); // Capacidad máxima de 4 hijos por nodo, capacidad mínima de 2 hijos por nodo
+
+    rstar_tree.insert(Rectangle(0, 0, 5, 5));
+    rstar_tree.insert(Rectangle(2, 2, 7, 7));
+    // Insertar más rectángulos
+
+    return 0;
+}
+
+
+
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <random>
+#include <vector>
+
+std::random_device rd;
+std::mt19937 gen(rd());
+
+std::vector<double> generarPuntoAleatorio(int dimension) {
+  std::uniform_real_distribution<double> dis(0.0, 1.0);
+
+  std::vector<double> punto(dimension);
+
+  for (int i = 0; i < dimension; i++)
+    punto[i] = dis(gen);
+
+  return punto;
+}
+
+double calcularDistanciaEuclidiana(const std::vector<double> &A, const std::vector<double> &B) {
+  double distancia = 0.0;
+  for (int i = 0; i < A.size(); i++)
+    distancia += std::pow(A[i] - B[i], 2);
+
+  return std::sqrt(distancia);
+}
+
+int main() {
+  int n_puntos_aleatorios = 100;
+  std::vector<int> dimensiones = {10, 50, 100, 500, 1000, 2000, 5000};
+
+  for (int dimension : dimensiones) {
+    std::vector<std::vector<double>> puntos;
+    for (int i = 0; i < n_puntos_aleatorios; i++)
+      puntos.push_back(generarPuntoAleatorio(dimension));
+
+    std::ofstream archivo("distancias_" + std::to_string(dimension) + ".txt");
+    if (!archivo.is_open()) {
+      std::cerr << "Error al abrir el archivo." << std::endl;
+      return 1;
+    }
+
+    int con=0;
+    for (int i = 0; i < puntos.size(); i++) {
+      for (int j = i + 1; j < puntos.size(); j++) {
+        double distancia = calcularDistanciaEuclidiana(puntos[i], puntos[j]);
+        archivo << distancia << " ";
+        con++;
+      }
+    }
+
+    archivo.close();
+
+    std::cout << "Dimension: " << dimension << ", Distancias calculadas: " << con << std::endl;
+  }
+
+  return 0;
+}
+
 
 
 
